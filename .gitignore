@@ -1,5 +1,10 @@
 .env
 /__pycache__/*
+<<<<<<< HEAD
 .vscode
-/images/*
+/env/*
+/images/*.png
 image.gif
+=======
+.vscode
+>>>>>>> parent of 611190c... finished basic working version
