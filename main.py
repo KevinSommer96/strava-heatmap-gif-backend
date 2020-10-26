@@ -50,7 +50,7 @@ def get_code(code=None):
 @app.get("/activities/")
 def get_activities(access_token: str):
     
-    r = requests.get('https://www.strava.com/api/v3/activities' + '?access_token=' + access_token + '&per_page=200' + '&page=' + str(1))
+    r = requests.get('https://www.strava.com/api/v3/activities' + '?access_token=' + access_token)
     r = r.json()
     
     return {'activities': r}
