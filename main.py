@@ -4,6 +4,14 @@ import requests
 from fastapi.responses import RedirectResponse, FileResponse
 from stravalib.client import Client
 from fastapi.middleware.cors import CORSMiddleware
+from pandas import json_normalize
+import glob 
+from PIL import Image
+import polyline
+import matplotlib.pyplot as plt
+import base64
+import math
+import shutil
 
 app = FastAPI()
 client = Client()
