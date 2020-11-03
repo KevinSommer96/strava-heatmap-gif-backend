@@ -4,3 +4,6 @@
 /images/*.png
 .vscode
 image.gif
+AWSCLIV2.pkg
+/aws/*
+Dockerfile
