@@ -6,4 +6,6 @@
 image.gif
 AWSCLIV2.pkg
 /aws/*
+/aws
+/__pycache__
 Dockerfile

@@ -22,10 +22,11 @@ origins = [
     "http://localhost",
     "http://localhost:8000",
     "http://localhost:3000",
-    "http://kevinsommer.com",
+    "http://kevinsommer.com/",
     "https://kevinsommer.com",
     "http://www.kevinsommer.com",
     "https://www.kevinsommer.com",
+    "https://master.d2o01wglwy4y89.amplifyapp.com"
 ]
 
 app.add_middleware(
