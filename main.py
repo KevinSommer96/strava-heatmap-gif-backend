@@ -6,12 +6,14 @@ from stravalib.client import Client
 from fastapi.middleware.cors import CORSMiddleware
 from pandas import json_normalize
 import glob 
-from PIL import Image
+from PIL import Image, ImageColor
 import polyline
 import matplotlib.pyplot as plt
 import base64
-import math
 import shutil
+import io
+import cartopy.crs as ccrs
+from cartopy.io.img_tiles import GoogleTiles, OSM
 
 app = FastAPI()
 client = Client()
@@ -25,8 +27,7 @@ origins = [
     "http://kevinsommer.com/",
     "https://kevinsommer.com",
     "http://www.kevinsommer.com",
-    "https://www.kevinsommer.com",
-    "https://master.d2o01wglwy4y89.amplifyapp.com"
+    "https://www.kevinsommer.com"
 ]
 
 app.add_middleware(
@@ -38,6 +39,13 @@ app.add_middleware(
 )
 
 
+# Helper Functions 
+def fig2img(fig): 
+    buf = io.BytesIO()
+    fig.savefig(buf, bbox_inches='tight', pad_inches=0, format='png')
+    buf.seek(0)
+    return Image.open(buf)
+
 # Environment Variables
 CLIENT_ID = os.getenv('CLIENT_ID')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET')
@@ -46,9 +54,7 @@ REDIRECT_URL = os.getenv('REDIRECT_URL')
 @app.get("/")
 def read_root():
     authorize_url = client.authorization_url(client_id=CLIENT_ID, redirect_uri=REDIRECT_URL)
-    print(authorize_url)
     return {"url": authorize_url}
-    # return RedirectResponse(authorize_url)
 
 
 @app.get("/authorised/")
@@ -60,57 +66,82 @@ def get_code(code=None):
 
     return {"access_token": access_token, "refresh_token": refresh_token, "expires_at": expires_at }
 
-@app.get("/activities/")
-def get_activities(access_token: str):
-    
-    r = requests.get('https://www.strava.com/api/v3/activities' + '?access_token=' + access_token)
-    r = r.json()
-    
-    return {'activities': r}
 
 @app.get('/gif/')
 def get_gif(access_token: str, min_lon: float, max_lat: float, max_lon: float, min_lat: float, 
-    ratio: float, colour: str, backgroundColour: str, alpha: float): 
+    ratio: float, colour: str, backgroundColour: str, alpha: float, activity_type: str, bg_img: str): 
     activities = requests.get('https://www.strava.com/api/v3/activities' + '?access_token=' + access_token + '&per_page=200' + '&page=' + str(1))
     activities = activities.json()
 
 
+    # convert activities to pandas dataframe
     df = json_normalize(activities)
-    df = df[df['type'] == 'Run']
 
-    df_ac = df[(df['start_latitude'] < max_lat)  & (df['start_latitude'] > min_lat) & (df["start_longitude"] < max_lon) 
+    # filter df by type of activity
+    if activity_type == 'Run':
+        df = df[df['type'] == 'Run']
+    elif activity_type == 'Ride': 
+        df = df[df['type'] == 'Ride']
+    else: 
+        df = df[(df['type'] == 'Run') | (df['type'] == 'Ride')]
+
+    # filter df by start coordinates using the bounding box
+    df_bbox = df[(df['start_latitude'] < max_lat)  & (df['start_latitude'] > min_lat) & (df["start_longitude"] < max_lon) 
         & (df["start_longitude"] > min_lon)]
 
-    df_ac = df_ac.sort_values(by=['start_date'])
+    df_bbox = df_bbox.sort_values(by=['start_date'])
 
-    fig = plt.figure(figsize=(8, ratio * 8))
 
-    fig.patch.set_facecolor(backgroundColour)
-    plt.xlim(min_lon, max_lon)
-    plt.ylim(min_lat, max_lat)
-    plt.xticks()
-    plt.yticks()
-    plt.axis('off')
+    # create imagery based on bg_img
+    if bg_img == 'sat':
+        imagery = GoogleTiles(style='satellite')
+    elif bg_img == 'osm':
+        imagery = OSM()
+    else: 
+        imagery = OSM()
+
+    # create figure to plot routes on
+    fig = plt.figure(figsize=(8, ratio * 8), frameon=False)
+    ax = fig.add_subplot(1, 1, 1, projection=imagery.crs)
+
+    fig.patch.set_visible(False)
+    ax.set_extent([min_lon, max_lon, min_lat, max_lat])
+    
+    ax.set_axis_off()
 
     # filepaths
-    fp_in = './images/*.png'
     fp_out = 'image.gif'
 
-    shutil.rmtree('./images')
-    os.mkdir('images')
-
-    for i in range(len(df_ac)):
+    imgs = []
+    for i in range(len(df_bbox)):
         try:
-            latitude, longitude = zip(*polyline.decode(df_ac.iloc[i]['map.summary_polyline']))
+            lat, lng = zip(*polyline.decode(df_bbox.iloc[i]['map.summary_polyline']))
         except: 
             print(i)
-        plt.plot(longitude, latitude, color=colour, alpha=alpha)
-        plt.savefig('./images/strava_plot_' + '_' + str(i).zfill(4) + '.png', bbox_inches='tight')
 
+        plt.plot(lng, lat, transform=ccrs.Geodetic(), color=colour, alpha=alpha)
+        imgs.append(fig2img(fig))
 
+    
+    # create background image
+    if bg_img == 'none':
+        bg = Image.new(mode='RGBA', size=imgs[0].size, color=ImageColor.getrgb(backgroundColour))
 
-    img, *imgs = [Image.open(f) for f in sorted(glob.glob(fp_in))]
-    img.save(fp=fp_out, format='GIF', append_images=imgs, save_all=True, duration=200, loop=0)
+    else:
+        fig = plt.figure(figsize=(8, ratio * 8), frameon=False)
+        ax = fig.add_subplot(1, 1, 1, projection=imagery.crs)
+        ax.set_extent([min_lon, max_lon, min_lat, max_lat])
+        fig.patch.set_visible(False)
+        ax.set_axis_off()
+
+        # set background imagery if one was sent
+        ax.add_image(imagery, 15)
+
+        # converting background to image
+        bg = fig2img(fig)
+
+    imgs = map(lambda img: Image.alpha_composite(bg, img), imgs)
+    bg.save(fp=fp_out, format='GIF', append_images=imgs, save_all=True, duration=200, loop=0)
 
     file = open('image.gif', 'rb')
     return {'gif': base64.b64encode(file.read())}
