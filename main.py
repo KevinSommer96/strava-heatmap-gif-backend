@@ -69,7 +69,8 @@ def get_code(code=None):
 
 @app.get('/gif/')
 def get_gif(access_token: str, min_lon: float, max_lat: float, max_lon: float, min_lat: float, 
-    ratio: float, colour: str, backgroundColour: str, alpha: float, activity_type: str, bg_img: str): 
+    ratio: float, colour: str, backgroundColour: str, alpha: float, activity_type: str, 
+    bg_img: str, duration: int): 
     activities = requests.get('https://www.strava.com/api/v3/activities' + '?access_token=' + access_token + '&per_page=200' + '&page=' + str(1))
     activities = activities.json()
 
@@ -141,7 +142,7 @@ def get_gif(access_token: str, min_lon: float, max_lat: float, max_lon: float, m
         bg = fig2img(fig)
 
     imgs = map(lambda img: Image.alpha_composite(bg, img), imgs)
-    bg.save(fp=fp_out, format='GIF', append_images=imgs, save_all=True, duration=200, loop=0)
+    bg.save(fp=fp_out, format='GIF', append_images=imgs, save_all=True, duration=duration, loop=0)
 
     file = open('image.gif', 'rb')
     return {'gif': base64.b64encode(file.read())}
