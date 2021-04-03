@@ -14,13 +14,10 @@ Pillow==8.0.0
 polyline==1.4.0
 pydantic==1.6.1
 pyparsing==2.4.7
-pyshp @ file:///home/conda/feedstock_root/build_artifacts/pyshp_1610646860606/work
 python-dateutil==2.8.1
 python-dotenv==0.14.0
 pytz==2020.1
 requests==2.24.0
-Shapely @ file:///home/conda/feedstock_root/build_artifacts/shapely_1611315597113/work
-six @ file:///home/conda/feedstock_root/build_artifacts/six_1590081179328/work
 starlette==0.13.6
 stravalib==0.10.2
 typing-extensions==3.7.4.3
