@@ -29,7 +29,7 @@ origins = [
     "http://www.kevinsommer.com",
     "https://www.kevinsommer.com"
     "https://heatmap.kevinsommer.com",
-    "https://www.heatmap.kevinsommer.com"
+    "https://www.heatmap.kevinsommer.com",
 ]
 
 app.add_middleware(
