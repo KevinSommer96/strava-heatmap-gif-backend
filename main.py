@@ -18,25 +18,27 @@ from cartopy.io.img_tiles import GoogleTiles, OSM
 app = FastAPI()
 client = Client()
 
-origins = [
-    "http://localhost.tiangolo.com",
-    "https://localhost.tiangolo.com",
-    "http://localhost",
-    "http://localhost:8000",
-    "http://localhost:3000",
-    "http://kevinsommer.com/",
-    "https://kevinsommer.com",
-    "http://www.kevinsommer.com",
-    "https://www.kevinsommer.com"
-    "https://heatmap.kevinsommer.com",
-    "https://www.heatmap.kevinsommer.com",
-    "http://heatmap.kevinsommer.com",
-    "http://www.heatmap.kevinsommer.com",
-]
+# origins = [
+#     "http://localhost.tiangolo.com",
+#     "https://localhost.tiangolo.com",
+#     "http://localhost",
+#     "http://localhost:8000",
+#     "http://localhost:3000",
+#     "http://kevinsommer.com/",
+#     "https://kevinsommer.com",
+#     "http://www.kevinsommer.com",
+#     "https://www.kevinsommer.com"
+#     "https://heatmap.kevinsommer.com",
+#     "https://www.heatmap.kevinsommer.com",
+#     "http://heatmap.kevinsommer.com",
+#     "http://www.heatmap.kevinsommer.com",
+# ]
+
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
